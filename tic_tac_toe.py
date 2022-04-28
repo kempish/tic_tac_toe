@@ -11,6 +11,19 @@ player = 'X'
 # opportunity to end game if someone win or in case of tie
 game_is_on = True
 
+# choose player vs player or play with computer
+play_with_computer = False
+print('\nplay with computer [C]\nplay with other player [P]')
+player_or_computer = getwch()
+
+# user can only choose between C and P
+while player_or_computer.capitalize() not in ['C', 'P']:
+    print('\nplease enter \'C\' or \'P\'\nplay with computer [C]\nplay with other player [P]')
+    player_or_computer = getwch()
+
+# user wants to play with computer → True otherwise → False
+play_with_computer = True if player_or_computer.capitalize() == 'C' else False
+
 class Board():
     def __init__(self, board) -> None:
         self.board = board
