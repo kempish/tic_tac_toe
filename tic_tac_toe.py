@@ -1,17 +1,14 @@
 from msvcrt import getwch
+import random
 
-# global values
-board = ['-', '-', '-', 
-         '-', '-', '-',
-         '-', '-', '-']
 
 # we got player X and O and we start with X player
 player = 'X'
 
-# opportunity to end game if someone win or in case of tie
+# variable for end game if someone win or in case of tie
 game_is_on = True
 
-# choose player vs player or play with computer
+# choose player vs player mode or play with computer
 play_with_computer = False
 print('\nplay with computer [C]\nplay with other player [P]')
 player_or_computer = getwch()
@@ -24,9 +21,13 @@ while player_or_computer.capitalize() not in ['C', 'P']:
 # user wants to play with computer → True otherwise → False
 play_with_computer = True if player_or_computer.capitalize() == 'C' else False
 
-class Board():
+class Board():    
+
     def __init__(self, board) -> None:
         self.board = board
+        # necessary to break function when computer makes move (in AI mode)
+        self.computer_turn = False
+
 
     # display board 3x3
     def __repr__(self) -> str:
@@ -37,10 +38,12 @@ class Board():
 
     # here players will choose which field they want to mark
     def choose_field(self, player):
-        global board
 
-        # whose turn now?
-        print(f'\nit\'s {player}\'s turn')
+        # whose turn now? [prompt depends on play mode]
+        if play_with_computer:
+            print('it\'s your turn')
+        else:
+            print(f'\nit\'s {player}\'s turn')
 
         # loop until answer will be in range 1-9 and will point unmarked field
         ask_again = True
@@ -61,10 +64,11 @@ class Board():
         self.board[int(answer) - 1] = player
 
 
-    # after each turn - change player automatically (unless we play with AI)
+    # after each turn - change player automatically (also when we play with AI)
     def change_player(self):
         global player
-
+        global play_with_computer
+        
         # it was player's X turn → change to player O
         if player == 'X':
             player = 'O'
@@ -122,10 +126,84 @@ class Board():
             print('\nGame over! It\'s a tie!\n')
             game_is_on = False
     
+
+    # function for simplification AI_mode function - mark empty field to defeat or block player - in case like this: block || X | block | X || or defeat || O | O | defeat || etc. [computer plays as O player]
+    def find_best_field(self, range, field_index_in_range, player, function):
+        # computer can use this function for either defeat or block player - func parameter determine what is this function use for
+        sign = 'X' if function == 'block' else 'O'
+        
+        # is still computers turn?
+        if self.computer_turn:
+            # check if two same signs
+            if range.count(sign) == 2 and range.count('-') == 1:
+                # if two same signs and one empty field - fill empty with computer's sign
+                for field_index in field_index_in_range:
+                    if self.board[field_index] == '-':
+                        self.board[field_index] = player
+                        self.computer_turn = False
+        else:
+            pass
     
-    # in case user chose playing with computer
-    def AI_mode():
-        pass
+    
+    # AI mode - if computer has no opportunity to neither defeat nor block player - let it fill random empty field
+    def fill_random(self):
+        empty_fields = []
+        for index, field in enumerate(self.board):
+            if field == '-':
+                empty_fields.append(index)
+        
+        # try to fill random field | if no more empty fields → it's a tie
+        try:
+            self.board[random.choice(empty_fields)] = player
+        except:
+            return self.tie()
+
+
+    # in case user chose playing with computer → AI mode
+    def AI_mode(self, player):
+
+        print('computer\'s turn:')
+        
+        # rows
+        row_one = [self.board[0], self.board[1], self.board[2]]
+        row_two = [self.board[3], self.board[4], self.board[5]]
+        row_three = [self.board[6], self.board[7], self.board[8]]
+        # columns
+        column_one = [self.board[0], self.board[3], self.board[6]]
+        column_two = [self.board[1], self.board[4], self.board[7]]        
+        column_three = [self.board[2], self.board[5], self.board[8]]
+        # diagonals
+        diagonal_one = [self.board[0], self.board[4], self.board[8]]
+        diagonal_two = [self.board[2], self.board[4], self.board[6]]
+
+        # list of arguments required to execute find_best_field() function
+        steps = [
+            # try to defeat/block rival in rows eg. X | - | X → X | O | X
+            [row_one, [0, 1, 2]],
+            [row_two, [3, 4, 5]],
+            [row_three, [6, 7, 8]],
+
+            # as above but try to defeat/block in columns
+            [column_one, [0, 3, 6]],
+            [column_two, [1, 4, 7]],
+            [column_three, [2, 5, 8]],
+
+            # as above but try to defeat/block in diagonals
+            [diagonal_one, [0, 4, 8]],
+            [diagonal_two, [2, 4, 6]],
+        ]
+
+        # call defeat player function with above arguments (computer tries to find possibility to defeat player)
+        for step in steps:
+            self.find_best_field(step[0], step[1], player, 'defeat')
+
+        # if not defeated → call block player function with above arguments (computer tries to find possibility to block player)
+        for step in steps:
+            self.find_best_field(step[0], step[1], player, 'block')
+
+        # no opportunities to defeat/block player? → choose random field
+        if self.computer_turn:
+            self.fill_random()
 
 
 board = Board(['-', '-', '-', 
@@ -135,7 +213,11 @@ board = Board(['-', '-', '-',
 
 while game_is_on:
     print(board)
-    board.choose_field(player)
+    if play_with_computer and player == 'O':
+        board.computer_turn = True
+        board.AI_mode(player)
+    else:
+        board.choose_field(player)
     board.check_row()
     board.check_column()
     board.check_diagonal()
