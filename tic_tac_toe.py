@@ -1,15 +1,16 @@
 from msvcrt import getwch
 import random
 
+# (GLOBAL) VARIABLES
 
-# we got player X and O and we start with X player
+# PLAYER SIGN - we got player X and O and we start with X player
 player = 'X'
 
-# variable for end game if someone win or in case of tie
+# CONTINUE GAME - variable for end game if someone win or in case of tie
 game_is_on = True
 
+# PLAY WIH COMPUTER
 # choose player vs player mode or play with computer
-play_with_computer = False
 print('\nplay with computer [C]\nplay with other player [P]')
 player_or_computer = getwch()
 
@@ -20,6 +21,18 @@ while player_or_computer.capitalize() not in ['C', 'P']:
 
 # user wants to play with computer → True otherwise → False
 play_with_computer = True if player_or_computer.capitalize() == 'C' else False
+
+# KEYBORD MODE - choose standard or numeric
+print('\nStandard\n1|2|3\n4|5|6\n7|8|9\n\nor\n\nNumeric\n7|8|9\n4|5|6\n1|2|3\n\nchoose keyboard mode [S/N]')
+choose_keyboard = getwch()
+
+# limit user answer to S and N
+while choose_keyboard.capitalize() not in ['S', 'N']:
+    print('\nplease enter \'S\' for standard keyboard mode or \'N\' for numeric keyboard mode')
+    choose_keyboard = getwch()
+
+numeric_keyboard = True if choose_keyboard.capitalize() == 'N' else False
+
 
 class Board():    
 
