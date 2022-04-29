@@ -1,7 +1,7 @@
 from msvcrt import getwch
 import random
 
-# (GLOBAL) VARIABLES
+# - - - (GLOBAL) VARIABLES
 
 # PLAYER SIGN - we got player X and O and we start with X player
 player = 'X'
@@ -9,8 +9,10 @@ player = 'X'
 # CONTINUE GAME - variable for end game if someone win or in case of tie
 game_is_on = True
 
-# PLAY WIH COMPUTER
-# choose player vs player mode or play with computer
+
+# - - - PLAY WIH COMPUTER
+
+# choose playerVSplayer mode or play with computer
 print('\nplay with computer [C]\nplay with other player [P]')
 player_or_computer = getwch()
 
@@ -22,7 +24,10 @@ while player_or_computer.capitalize() not in ['C', 'P']:
 # user wants to play with computer → True otherwise → False
 play_with_computer = True if player_or_computer.capitalize() == 'C' else False
 
-# KEYBORD MODE - choose standard or numeric
+
+# - - - KEYBORD MODE
+
+# choose standard or numeric
 print('\nStandard\n1|2|3\n4|5|6\n7|8|9\n\nor\n\nNumeric\n7|8|9\n4|5|6\n1|2|3\n\nchoose keyboard mode [S/N]')
 choose_keyboard = getwch()
 
@@ -47,6 +52,31 @@ class Board():
         return (f'\n{self.board[0]} | {self.board[1]} | {self.board[2]}\n'
                 f'{self.board[3]} | {self.board[4]} | {self.board[5]}\n'
                 f'{self.board[6]} | {self.board[7]} | {self.board[8]}\n')
+    
+
+    # if user chose numeric keyboard mode, we need to convert it's answers to match them with fields' numbers
+    def num_keyboard_converter(self, player_sign):
+
+        # numbers dictionary - it matches user answers with real field's number
+        number_dict = {1:6, 2:7, 3:8, 4:3, 5:4, 6:5, 7:0, 8:1, 9:2}
+
+        # loop till correct answer (from 1 to 9)
+        correct_answer = False
+        while not correct_answer:
+            
+            # ask for field number
+            user_number = int(input('which field do you choose? (1-9): '))
+
+            # out of range 1-9? ask again
+            while user_number not in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+                user_number = int(input('Incorrect input! Which field do you choose? (1-9): '))
+
+            # if two same signs in row/column/diagonal AND third field is empty - mark, otherwise - ask again
+            if self.board[number_dict[int(user_number)]] != '-':
+                print('This field is already taken! Choose another one.')
+            else:
+                self.board[number_dict[int(user_number)]] = player_sign
+                correct_answer = True
 
 
     # here players will choose which field they want to mark
@@ -57,24 +87,28 @@ class Board():
             print('it\'s your turn')
         else:
             print(f'\nit\'s {player}\'s turn')
-
-        # loop until answer will be in range 1-9 and will point unmarked field
-        ask_again = True
-        while ask_again:
-            answer = input('which field do you choose? (1-9): ')
-
-            # check if answer is in range 1-9
-            while answer not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+        
+        # user chose numeric keyboard mode → convert answers
+        if numeric_keyboard:
+            self.num_keyboard_converter(player)
+        else:
+            # loop until answer will be in range 1-9 and will point unmarked field
+            ask_again = True
+            while ask_again:
                 answer = input('which field do you choose? (1-9): ')
 
-            # check if choosen field is already taken
-            if self.board[int(answer) - 1] != '-':
-                print('This field is already taken! Choose another one.')
-            else:
-                ask_again = False
+                # check if answer is in range 1-9
+                while answer not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                    answer = input('which field do you choose? (1-9): ')
 
-        # mark field with player's mark
-        self.board[int(answer) - 1] = player
+                # check if choosen field is already taken
+                if self.board[int(answer) - 1] != '-':
+                    print('This field is already taken! Choose another one.')
+                else:
+                    # mark field with player's mark  
+                    self.board[int(answer) - 1] = player
+                    # end loop
+                    ask_again = False
 
 
     # after each turn - change player automatically (also when we play with AI)
@@ -140,16 +174,17 @@ class Board():
             game_is_on = False
     
 
-    # function for simplification AI_mode function - mark empty field to defeat or block player - in case like this: block || X | block | X || or defeat || O | O | defeat || etc. [computer plays as O player]
-    def find_best_field(self, range, field_index_in_range, player, function):
+    # AI mode - function for simplification AI_mode function - mark empty field to defeat or block player - in case like this: block || X | block | X || or defeat || O | O | defeat || etc. [computer plays as O player]
+    def find_best_field(self, range, field_index_in_range, player, func):
+
         # computer can use this function for either defeat or block player - func parameter determine what is this function use for
-        sign = 'X' if function == 'block' else 'O'
+        sign = 'X' if func == 'block' else 'O'
         
         # is still computers turn?
         if self.computer_turn:
             # check if two same signs
             if range.count(sign) == 2 and range.count('-') == 1:
-                # if two same signs and one empty field - fill empty with computer's sign
+                # if two same signs and one empty field - fill empty with computer's sign and end turn
                 for field_index in field_index_in_range:
                     if self.board[field_index] == '-':
                         self.board[field_index] = player
@@ -236,4 +271,3 @@ while game_is_on:
     board.check_diagonal()
     board.tie()
     board.change_player()
-
